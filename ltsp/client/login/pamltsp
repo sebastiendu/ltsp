@@ -265,6 +265,10 @@ EOF
     # If $HOME isn't SSHFS, exit
     grep -qs "$pw_dir fuse.sshfs" /proc/mounts || return 0
 
+    tac /etc/ltsp/shared_dirs | while read shared_dir; do
+        grep -qs "$pw_name@server:$shared_dir $shared_dir fuse.sshfs " /proc/mounts && fusermount -u "$shared_dir"
+    done
+
     # TODO: only run this as root
     # TODO: --quiet isn't supported in jessie-mate
     # Tell systemd not to wait nor to kill this:
@@ -308,9 +312,6 @@ unmount_sshfs_stage2() {
         # If no user processes are running, unmount it
         if [ "$(pgrep -cu "$pw_name")" = 0 ]; then
             fusermount -u "$pw_dir"
-            tac /etc/ltsp/shared_dirs | while read shared_dir; do
-                grep -qs "$pw_name@server:$shared_dir $shared_dir fuse.sshfs " /proc/mounts && fusermount -u "$shared_dir"
-            done
             return 0
         fi
     done
